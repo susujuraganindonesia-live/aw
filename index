@@ -1,1 +1,331 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Posting Otomatis</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: Arial, sans-serif; background:#f4f6f8; margin:0; padding:20px; }
+  h1 { text-align:center; color:#2c3e50; margin-bottom:6px; font-size:26px; }
+  #jamRealTime { text-align:center; font-size:15px; color:#34495e; margin-bottom:4px; }
+  #infoUpdate { text-align:center; color:#7f8c8d; margin-bottom:20px; font-size:13px; }
 
+  .kartu { display:flex; flex-wrap:wrap; gap:16px; justify-content:center; margin-bottom:24px; }
+  .kotak { background:#fff; border-radius:10px; padding:16px 24px; box-shadow:0 2px 6px rgba(0,0,0,.1); text-align:center; min-width:140px; flex:1 1 140px; }
+  .kotak h2 { margin:0; font-size:28px; color:#2c3e50; }
+  .kotak p { margin:4px 0 0; color:#7f8c8d; font-size:13px; }
+
+  .kotakJadwal { background:#fff; border-radius:10px; padding:16px 24px; box-shadow:0 2px 6px rgba(0,0,0,.1); text-align:center; margin-bottom:24px; }
+  .kotakJadwal h2 { margin:0; font-size:18px; color:#2c3e50; }
+  .kotakJadwal p { margin:4px 0 0; color:#7f8c8d; font-size:13px; }
+  #countdown { font-size:22px; font-weight:bold; color:#e67e22; margin-top:6px; }
+
+  table { width:100%; border-collapse:collapse; background:#fff; border-radius:10px; overflow:hidden; box-shadow:0 2px 6px rgba(0,0,0,.1); }
+  th, td { padding:10px; text-align:left; border-bottom:1px solid #eee; font-size:14px; }
+  th { background:#2c3e50; color:#fff; }
+  .status-posted { color:#27ae60; font-weight:bold; }
+  .status-error { color:#e74c3c; font-weight:bold; }
+  .status-pending { color:#f39c12; font-weight:bold; }
+
+  #btnPengaturan {
+    position:fixed; top:16px; left:16px; width:44px; height:44px;
+    border:none; border-radius:8px; background:#2c3e50; color:#fff;
+    font-size:18px; font-weight:bold; cursor:pointer; z-index:6;
+    box-shadow:0 2px 6px rgba(0,0,0,.2); display:flex; align-items:center; justify-content:center;
+  }
+
+  .modalOverlay {
+    display:none;
+    position:fixed;
+    top:0; left:0; right:0; bottom:0;
+    background:rgba(0,0,0,.5);
+    align-items:center;
+    justify-content:center;
+    z-index:100;
+  }
+  .modalBox { background:#fff; padding:24px; border-radius:10px; width:90%; max-width:360px; max-height:90vh; overflow:auto; }
+  .modalBox input, .modalBox select { width:100%; padding:8px; margin:6px 0; box-sizing:border-box; }
+  .modalBox button { width:100%; padding:8px; border:none; border-radius:6px; color:#fff; margin-top:4px; cursor:pointer; }
+
+  @media (max-width: 600px) {
+    h1 { font-size:20px; }
+    .kotak { min-width:100px; padding:12px; }
+    .kotak h2 { font-size:20px; }
+
+    table, thead, tbody, th, td, tr { display:block; }
+    thead { display:none; }
+    tbody tr {
+      background:#fff; margin-bottom:12px; border-radius:8px;
+      box-shadow:0 2px 6px rgba(0,0,0,.1); padding:10px;
+    }
+    tbody td {
+      border:none; padding:6px 4px; font-size:13px;
+      display:flex; justify-content:space-between;
+    }
+    tbody td::before {
+      content: attr(data-label);
+      font-weight:bold; color:#2c3e50; margin-right:8px;
+    }
+    #btnPengaturan { top:10px; left:10px; width:38px; height:38px; font-size:15px; }
+  }
+</style>
+</head>
+<body>
+
+<h1>📊 Dashboard Posting Otomatis</h1>
+<p id="jamRealTime">--:--:--</p>
+<p id="infoUpdate">Memuat data...</p>
+
+<div class="kartu">
+  <div class="kotak"><h2 id="total">-</h2><p>Total Naskah</p></div>
+  <div class="kotak"><h2 id="posted">-</h2><p>Sudah Posting</p></div>
+  <div class="kotak"><h2 id="pending">-</h2><p>Belum Posting</p></div>
+  <div class="kotak"><h2 id="error">-</h2><p>Error</p></div>
+  <div class="kotak"><h2 id="successRate">-</h2><p>Tingkat Keberhasilan</p></div>
+</div>
+<div class="kotak"><h2 id="terjadwalHariIni">-</h2><p>Terjadwal Hari Ini</p></div>
+<div class="kotakJadwal">
+  <h2 id="jadwalBerikutnya">-</h2>
+  <p>Jadwal Berikutnya</p>
+  <div id="countdown">--:--:--</div>
+</div>
+
+<table>
+  <thead>
+    <tr><th>Judul</th><th>Lokasi</th><th>Jadwal</th><th>Status</th><th>Link</th></tr>
+  </thead>
+  <tbody id="tabelData"></tbody>
+</table>
+
+<button id="btnPengaturan" title="Pengaturan">W</button>
+
+<div id="modalLogin" class="modalOverlay">
+  <div class="modalBox">
+    <h3>Masuk Pengaturan</h3>
+    <input type="password" id="inputPassword" placeholder="Masukkan password">
+    <button onclick="cekLogin()" style="background:#2c3e50;">Masuk</button>
+    <p style="cursor:pointer;color:#3498db;margin-top:10px;" onclick="resetPass()">Lupa password? Kirim ke email</p>
+    <p id="pesanLogin" style="color:red;"></p>
+    <button onclick="tutupModalLogin()" style="background:#7f8c8d;">Batal</button>
+  </div>
+</div>
+
+<div id="panelPengaturan" class="modalOverlay">
+  <div class="modalBox">
+    <h3>Pengaturan</h3>
+    <label>ID Blog</label>
+    <input type="text" id="blogId">
+    <label>ID Folder Foto</label>
+    <input type="text" id="folderId">
+    <label>Email Reset Password</label>
+    <input type="email" id="emailReset">
+    <button onclick="simpanPengaturanUI()" style="background:#27ae60;">Simpan Pengaturan</button>
+
+    <hr>
+    <label>Ubah Password</label>
+    <input type="password" id="passwordLama" placeholder="Password lama">
+    <input type="password" id="passwordBaru" placeholder="Password baru">
+    <button onclick="ubahPasswordUI()" style="background:#2980b9;">Ubah Password</button>
+
+    <hr>
+    <label>ID File Excel (Google Drive)</label>
+    <input type="text" id="fileIdExcel">
+    <button onclick="importNaskahUI()" style="background:#8e44ad;">Import Naskah</button>
+
+    <hr>
+    <div style="display:flex; gap:8px;">
+      <button onclick="jalankanAksi('startAplikasi')" style="background:#2ecc71;">Start</button>
+      <button onclick="jalankanAksi('stopAplikasi')" style="background:#e74c3c;">Stop</button>
+    </div>
+
+    <hr>
+    <label>Perintah Manual</label>
+    <select id="daftarPerintah">
+      <option value="setupAwal">setupAwal</option>
+      <option value="resetStatusError">resetStatusError</option>
+      <option value="perbaikiLabelTerlaluPanjang">perbaikiLabelTerlaluPanjang</option>
+      <option value="isiLinkFotoOtomatis">isiLinkFotoOtomatis</option>
+      <option value="isiLokasiOtomatis">isiLokasiOtomatis</option>
+      <option value="buatJadwalAcakHarian">buatJadwalAcakHarian</option>
+      <option value="cekJadwalPosting">cekJadwalPosting</option>
+      <option value="isiLinkPostLama">isiLinkPostLama</option>
+    </select>
+    <button onclick="jalankanPerintahUI()" style="background:#f39c12;">Jalankan Perintah</button>
+
+    <p id="pesanPanel" style="color:green;margin-top:10px;"></p>
+    <button onclick="tutupPanel()" style="background:#7f8c8d;">Tutup</button>
+  </div>
+</div>
+
+<script>
+var WEB_APP_URL = 'https://script.google.com/macros/s/AKfycbzePFvFEMsPM6YNSfBXGHdbkm2-uUhXpu2-YRhDEAHcPk1C1fVdSkzZQ4M4PEoNn5sp/exec';
+var passwordSesi = '';
+var jadwalBerikutnyaTimestamp = null;
+// ================== JAM REAL-TIME ==================
+function updateJam() {
+  var now = new Date();
+  document.getElementById('jamRealTime').innerText =
+    '🕒 ' + now.toLocaleTimeString('id-ID');
+  updateCountdown();
+}
+setInterval(updateJam, 1000);
+updateJam();
+
+// ================== COUNTDOWN KE JADWAL BERIKUTNYA ==================
+function updateCountdown() {
+  var el = document.getElementById('countdown');
+  if (!jadwalBerikutnyaTimestamp) {
+    el.innerText = '-';
+    return;
+  }
+  var selisih = jadwalBerikutnyaTimestamp - new Date().getTime();
+  if (selisih <= 0) {
+    el.innerText = 'Waktunya posting!';
+    return;
+  }
+  var jam = Math.floor(selisih / 3600000);
+  var menit = Math.floor((selisih % 3600000) / 60000);
+  var detik = Math.floor((selisih % 60000) / 1000);
+  el.innerText =
+    (jam < 10 ? '0' : '') + jam + ':' +
+    (menit < 10 ? '0' : '') + menit + ':' +
+    (detik < 10 ? '0' : '') + detik;
+}
+ // ================== MUAT DATA DASHBOARD ==================
+function muatData() {
+  fetch(WEB_APP_URL + '?format=json')
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      document.getElementById('total').innerText = data.total;
+      document.getElementById('posted').innerText = data.posted;
+      document.getElementById('pending').innerText = data.pending;
+      document.getElementById('error').innerText = data.error;
+      document.getElementById('successRate').innerText = data.successRate + '%';
+      document.getElementById('terjadwalHariIni').innerText = data.terjadwalHariIni != null ? data.terjadwalHariIni : 0;
+      document.getElementById('jadwalBerikutnya').innerText = data.jadwalBerikutnyaTeks;
+      document.getElementById('infoUpdate').innerText = 'Terakhir diperbarui: ' + data.waktuUpdate;
+
+      jadwalBerikutnyaTimestamp = data.jadwalBerikutnyaTimestamp || null;
+      updateCountdown();
+
+      var tbody = document.getElementById('tabelData');
+      tbody.innerHTML = '';
+      data.rows.forEach(function (row) {
+        var kelas = row.status === 'Posted' ? 'status-posted' : (row.status.indexOf('Error') === 0 ? 'status-error' : 'status-pending');
+        var link = row.link ? '<a href="' + row.link + '" target="_blank">Lihat</a>' : '-';
+        tbody.innerHTML +=
+          '<tr>' +
+            '<td data-label="Judul">' + row.judul + '</td>' +
+            '<td data-label="Lokasi">' + row.lokasi + '</td>' +
+            '<td data-label="Jadwal">' + row.jadwal + '</td>' +
+            '<td data-label="Status" class="' + kelas + '">' + row.status + '</td>' +
+            '<td data-label="Link">' + link + '</td>' +
+          '</tr>';
+      });
+    })
+    .catch(function () {
+      document.getElementById('infoUpdate').innerText = 'Gagal memuat data. Periksa URL Web App.';
+    });
+}
+
+muatData();
+setInterval(muatData, 15000); // refresh tiap 15 detik
+
+// ================== LOGIN & PENGATURAN ==================
+document.getElementById('btnPengaturan').onclick = function () {
+  document.getElementById('modalLogin').style.display = 'flex';
+};
+
+function tutupModalLogin() {
+  document.getElementById('modalLogin').style.display = 'none';
+  document.getElementById('pesanLogin').innerText = '';
+}
+
+function cekLogin() {
+  var pass = document.getElementById('inputPassword').value;
+  fetch(WEB_APP_URL + '?action=login&password=' + encodeURIComponent(pass))
+    .then(function (r) { return r.json(); })
+    .then(function (res) {
+      if (res.sukses) {
+        passwordSesi = pass;
+        document.getElementById('modalLogin').style.display = 'none';
+        bukaPanelPengaturan();
+      } else {
+        document.getElementById('pesanLogin').innerText = 'Password salah.';
+      }
+    });
+}
+
+function resetPass() {
+  fetch(WEB_APP_URL + '?action=resetPassword&password=x')
+    .then(function () {
+      document.getElementById('pesanLogin').style.color = 'green';
+      document.getElementById('pesanLogin').innerText = 'Password baru dikirim ke email.';
+    });
+}
+
+function bukaPanelPengaturan() {
+  fetch(WEB_APP_URL + '?action=ambilPengaturan&password=' + encodeURIComponent(passwordSesi))
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      document.getElementById('blogId').value = data.blogId || '';
+      document.getElementById('folderId').value = data.folderId || '';
+      document.getElementById('emailReset').value = data.emailReset || '';
+      document.getElementById('panelPengaturan').style.display = 'flex';
+    });
+}
+
+function simpanPengaturanUI() {
+  var blogId = document.getElementById('blogId').value;
+  var folderId = document.getElementById('folderId').value;
+  var email = document.getElementById('emailReset').value;
+  fetch(WEB_APP_URL + '?action=simpanPengaturan&password=' + encodeURIComponent(passwordSesi) +
+    '&blogId=' + encodeURIComponent(blogId) + '&folderId=' + encodeURIComponent(folderId) + '&email=' + encodeURIComponent(email))
+    .then(function (r) { return r.json(); })
+    .then(function (res) { tampilkanPesanPanel(res.pesan); });
+}
+
+function ubahPasswordUI() {
+  var lama = document.getElementById('passwordLama').value;
+  var baru = document.getElementById('passwordBaru').value;
+  fetch(WEB_APP_URL + '?action=ubahPassword&password=' + encodeURIComponent(passwordSesi) +
+    '&passwordLama=' + encodeURIComponent(lama) + '&passwordBaru=' + encodeURIComponent(baru))
+    .then(function (r) { return r.json(); })
+    .then(function (res) {
+      tampilkanPesanPanel(res.pesan);
+      if (res.sukses) passwordSesi = baru;
+    });
+}
+
+function importNaskahUI() {
+  var fileId = document.getElementById('fileIdExcel').value;
+  fetch(WEB_APP_URL + '?action=importNaskah&password=' + encodeURIComponent(passwordSesi) + '&fileId=' + encodeURIComponent(fileId))
+    .then(function (r) { return r.json(); })
+    .then(function (res) { tampilkanPesanPanel(res.pesan); });
+}
+
+function jalankanAksi(aksi) {
+  fetch(WEB_APP_URL + '?action=' + aksi + '&password=' + encodeURIComponent(passwordSesi))
+    .then(function (r) { return r.json(); })
+    .then(function (res) { tampilkanPesanPanel(res.pesan); });
+}
+
+function jalankanPerintahUI() {
+  var fungsi = document.getElementById('daftarPerintah').value;
+  fetch(WEB_APP_URL + '?action=jalankanPerintah&password=' + encodeURIComponent(passwordSesi) + '&namaFungsi=' + encodeURIComponent(fungsi))
+    .then(function (r) { return r.json(); })
+    .then(function (res) { tampilkanPesanPanel(res.pesan); });
+}
+
+function tampilkanPesanPanel(pesan) {
+  document.getElementById('pesanPanel').innerText = pesan || 'Selesai.';
+}
+
+function tutupPanel() {
+  document.getElementById('panelPengaturan').style.display = 'none';
+}
+</script>
+
+</body>
+</html>
