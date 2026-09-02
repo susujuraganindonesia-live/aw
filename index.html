@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SUSU JURAGAN</title>
+  <title>Posting Otomatis</title>
   <link rel="icon" type="image/png" href="logo-sj.png">
   <style>
     * { box-sizing: border-box; }
@@ -58,6 +58,32 @@
     .scroll-buttons { position: fixed; right: 18px; bottom: 24px; display: flex; flex-direction: column; gap: 10px; z-index: 999; }
     .scroll-buttons button { width: 44px; height: 44px; border-radius: 50%; border: none; background: #2c3e50; color: #fff; font-size: 18px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.25); display: flex; align-items: center; justify-content: center; opacity: 0.9; transition: opacity 0.2s, transform 0.2s; }
     .scroll-buttons button:hover { opacity: 1; transform: scale(1.08); }
+
+    .overlay { position: fixed; inset: 0; background: rgba(44, 62, 80, 0.55); backdrop-filter: blur(3px); display: none; align-items: center; justify-content: center; z-index: 2000; padding: 16px; }
+    .overlay.tampil { display: flex; }
+    .overlay-box { background: rgba(255, 255, 255, 0.97); border-radius: 14px; padding: 24px; width: 100%; max-width: 420px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); max-height: 90vh; overflow-y: auto; }
+    .overlay-box h2 { margin-top: 0; font-size: 18px; }
+    .overlay-box input, .overlay-box textarea { width: 100%; padding: 10px 12px; border: 1px solid #dcdfe3; border-radius: 8px; font-size: 14px; margin-bottom: 10px; font-family: inherit; }
+    .overlay-box textarea { min-height: 90px; resize: vertical; }
+    .overlay-box label { font-size: 13px; font-weight: 600; color: #34495e; display: block; margin-bottom: 4px; }
+    .btn-primary { background: #2c3e50; color: #fff; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; }
+    .btn-primary:hover { background: #34495e; }
+    .btn-secondary { background: #ecf0f1; color: #2c3e50; border: none; padding: 10px 18px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 600; }
+    .btn-secondary:hover { background: #dfe4e6; }
+    .btn-row { display: flex; gap: 8px; margin-top: 10px; }
+    .pesan-status { font-size: 13px; margin-top: 8px; padding: 8px 10px; border-radius: 6px; display: none; }
+    .pesan-status.sukses { display: block; background: #eafaf1; color: #27ae60; }
+    .pesan-status.gagal { display: block; background: #fdecea; color: #c0392b; }
+
+    .settings-panel { position: fixed; inset: 0; background: rgba(240, 242, 245, 0.92); backdrop-filter: blur(6px); display: none; z-index: 1500; overflow-y: auto; padding: 20px; }
+    .settings-panel.tampil { display: block; }
+    .settings-inner { max-width: 780px; margin: 0 auto; }
+    .settings-card { background: rgba(255,255,255,0.9); border-radius: 12px; padding: 18px 20px; margin-bottom: 16px; box-shadow: 0 2px 10px rgba(0,0,0,0.08); }
+    .settings-card h3 { margin-top: 0; font-size: 16px; }
+    .fungsi-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+    .fungsi-grid button { flex: 1 1 auto; min-width: 150px; background: #fff; border: 1px solid #dcdfe3; padding: 9px 12px; border-radius: 8px; cursor: pointer; font-size: 13px; color: #2c3e50; }
+    .fungsi-grid button:hover { background: #f4f6f7; border-color: #b8c0c6; }
+    .settings-close { position: sticky; top: 0; text-align: right; margin-bottom: 8px; }
   </style>
 </head>
 <body>
@@ -69,7 +95,7 @@
   <div class="header">
     <div class="header-brand">
       <img src="logo-sj.png" alt="Susu Juragan">
-      <h1>SUSU JURAGAN</h1>
+      <h1>Posting Otomatis</h1>
     </div>
     <div class="tanggal">
       <div id="tanggalHijriMasehi"></div>
@@ -77,7 +103,7 @@
     </div>
   </div>
 
-  <button class="refresh-btn" onclick="muatData()">🔄 Perbarui Sekarang</button>
+  <button class="refresh-btn" onclick="bukaModalPassword()">⚙️ Pengaturan</button>
   <div class="refresh-info">Memperbarui data otomatis setiap 15 detik</div>
 
   <div class="error-box" id="errorBox"></div>
@@ -121,6 +147,71 @@
     <button onclick="window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'})" title="Scroll ke bawah">▼</button>
   </div>
 
+  <!-- MODAL PASSWORD -->
+  <div class="overlay" id="modalPassword">
+    <div class="overlay-box">
+      <h2>🔒 Masuk ke Pengaturan</h2>
+      <label>Password</label>
+      <input type="password" id="inputPassword" placeholder="Masukkan password">
+      <div class="pesan-status" id="pesanLogin"></div>
+      <div class="btn-row">
+        <button class="btn-primary" onclick="prosesLogin()">Masuk</button>
+        <button class="btn-secondary" onclick="tutupModalPassword()">Batal</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- PANEL PENGATURAN (TRANSPARAN) -->
+  <div class="settings-panel" id="panelPengaturan">
+    <div class="settings-inner">
+      <div class="settings-close">
+        <button class="btn-secondary" onclick="tutupPanelPengaturan()">✕ Tutup</button>
+      </div>
+
+      <div class="settings-card">
+        <h3>Status Sistem</h3>
+        <div class="btn-row">
+          <button class="btn-primary" onclick="jalankanAksi('startAplikasi')">▶️ Aktifkan Aplikasi</button>
+          <button class="btn-secondary" onclick="jalankanAksi('stopAplikasi')">⏹️ Hentikan Aplikasi</button>
+        </div>
+        <div class="pesan-status" id="pesanStatusSistem"></div>
+      </div>
+
+      <div class="settings-card">
+        <h3>Jalankan Fungsi</h3>
+        <div class="fungsi-grid">
+          <button onclick="jalankanPerintah('setupAwal')">Setup Awal</button>
+          <button onclick="jalankanPerintah('resetStatusError')">Reset Status Error</button>
+          <button onclick="jalankanPerintah('perbaikiLabelTerlaluPanjang')">Perbaiki Label Panjang</button>
+          <button onclick="jalankanPerintah('isiLinkFotoOtomatis')">Isi Link Foto</button>
+          <button onclick="jalankanPerintah('isiLokasiOtomatis')">Isi Lokasi Otomatis</button>
+          <button onclick="jalankanPerintah('buatJadwalLengkapSemuaNaskah')">Buat Jadwal Posting</button>
+          <button onclick="jalankanPerintah('cekJadwalPosting')">Cek &amp; Posting Sekarang</button>
+          <button onclick="jalankanPerintah('isiLinkPostLama')">Isi Link Post Lama</button>
+        </div>
+        <div class="pesan-status" id="pesanFungsi"></div>
+      </div>
+
+      <div class="settings-card">
+        <h3>Tambah Naskah Baru</h3>
+        <label>Judul</label>
+        <input type="text" id="naskahJudul" placeholder="Judul postingan">
+        <label>Konten</label>
+        <textarea id="naskahKonten" placeholder="Isi konten postingan"></textarea>
+        <label>Label (pisahkan dengan koma)</label>
+        <input type="text" id="naskahLabel" placeholder="Contoh: Promo, Susu Kambing">
+        <label>Link Foto (opsional, dikosongkan = diisi otomatis nanti)</label>
+        <input type="text" id="naskahLinkFoto" placeholder="https://...">
+        <label>Lokasi</label>
+        <input type="text" id="naskahLokasi" placeholder="Contoh: Beji Kota Depok">
+        <div class="btn-row">
+          <button class="btn-primary" onclick="tambahNaskahBaru()">💾 Simpan Naskah</button>
+        </div>
+        <div class="pesan-status" id="pesanNaskah"></div>
+      </div>
+    </div>
+  </div>
+
   <script>
     // ====== GANTI DENGAN URL WEB APP APPS SCRIPT KAMU ======
     // Contoh: 'https://script.google.com/macros/s/AKfycb.../exec'
@@ -128,6 +219,134 @@
     // =========================================================
 
     var targetCountdown = null;
+    var sesiPassword = '';
+
+    function panggilAksi(actionParams) {
+      var params = new URLSearchParams(actionParams);
+      var url = WEB_APP_URL + (WEB_APP_URL.indexOf('?') === -1 ? '?' : '&') + params.toString();
+      return fetch(url).then(function (res) {
+        if (!res.ok) throw new Error('HTTP ' + res.status);
+        return res.json();
+      });
+    }
+
+    function bukaModalPassword() {
+      document.getElementById('inputPassword').value = '';
+      document.getElementById('pesanLogin').className = 'pesan-status';
+      document.getElementById('pesanLogin').innerText = '';
+      document.getElementById('modalPassword').classList.add('tampil');
+    }
+
+    function tutupModalPassword() {
+      document.getElementById('modalPassword').classList.remove('tampil');
+    }
+
+    function prosesLogin() {
+      var pass = document.getElementById('inputPassword').value;
+      var pesan = document.getElementById('pesanLogin');
+      if (!pass) {
+        pesan.className = 'pesan-status gagal';
+        pesan.innerText = 'Password tidak boleh kosong.';
+        return;
+      }
+      pesan.className = 'pesan-status';
+      pesan.innerText = 'Memeriksa...';
+      pesan.style.display = 'block';
+
+      panggilAksi({ action: 'login', password: pass })
+        .then(function (hasil) {
+          if (hasil.sukses) {
+            sesiPassword = pass;
+            tutupModalPassword();
+            document.getElementById('panelPengaturan').classList.add('tampil');
+          } else {
+            pesan.className = 'pesan-status gagal';
+            pesan.innerText = 'Password salah, coba lagi.';
+          }
+        })
+        .catch(function (err) {
+          pesan.className = 'pesan-status gagal';
+          pesan.innerText = 'Gagal terhubung: ' + err.message;
+        });
+    }
+
+    function tutupPanelPengaturan() {
+      document.getElementById('panelPengaturan').classList.remove('tampil');
+    }
+
+    function jalankanAksi(namaAksi) {
+      var pesan = document.getElementById('pesanStatusSistem');
+      pesan.className = 'pesan-status';
+      pesan.innerText = 'Memproses...';
+      pesan.style.display = 'block';
+      panggilAksi({ action: namaAksi, password: sesiPassword })
+        .then(function (hasil) {
+          pesan.className = 'pesan-status ' + (hasil.sukses ? 'sukses' : 'gagal');
+          pesan.innerText = hasil.pesan || (hasil.sukses ? 'Berhasil.' : 'Gagal.');
+          muatData();
+        })
+        .catch(function (err) {
+          pesan.className = 'pesan-status gagal';
+          pesan.innerText = 'Gagal: ' + err.message;
+        });
+    }
+
+    function jalankanPerintah(namaFungsi) {
+      var pesan = document.getElementById('pesanFungsi');
+      pesan.className = 'pesan-status';
+      pesan.innerText = 'Menjalankan ' + namaFungsi + '...';
+      pesan.style.display = 'block';
+      panggilAksi({ action: 'jalankanPerintah', password: sesiPassword, namaFungsi: namaFungsi })
+        .then(function (hasil) {
+          pesan.className = 'pesan-status ' + (hasil.sukses ? 'sukses' : 'gagal');
+          pesan.innerText = hasil.pesan || (hasil.sukses ? 'Berhasil.' : 'Gagal.');
+          muatData();
+        })
+        .catch(function (err) {
+          pesan.className = 'pesan-status gagal';
+          pesan.innerText = 'Gagal: ' + err.message;
+        });
+    }
+
+    function tambahNaskahBaru() {
+      var pesan = document.getElementById('pesanNaskah');
+      var judul = document.getElementById('naskahJudul').value.trim();
+      var konten = document.getElementById('naskahKonten').value.trim();
+      var label = document.getElementById('naskahLabel').value.trim();
+      var linkFoto = document.getElementById('naskahLinkFoto').value.trim();
+      var lokasi = document.getElementById('naskahLokasi').value.trim();
+
+      if (!judul || !konten) {
+        pesan.className = 'pesan-status gagal';
+        pesan.innerText = 'Judul dan Konten wajib diisi.';
+        return;
+      }
+
+      pesan.className = 'pesan-status';
+      pesan.innerText = 'Menyimpan...';
+      pesan.style.display = 'block';
+
+      panggilAksi({
+        action: 'tambahNaskah', password: sesiPassword,
+        judul: judul, konten: konten, label: label, linkFoto: linkFoto, lokasi: lokasi
+      })
+        .then(function (hasil) {
+          pesan.className = 'pesan-status ' + (hasil.sukses ? 'sukses' : 'gagal');
+          pesan.innerText = hasil.pesan || (hasil.sukses ? 'Naskah berhasil disimpan.' : 'Gagal menyimpan.');
+          if (hasil.sukses) {
+            document.getElementById('naskahJudul').value = '';
+            document.getElementById('naskahKonten').value = '';
+            document.getElementById('naskahLabel').value = '';
+            document.getElementById('naskahLinkFoto').value = '';
+            document.getElementById('naskahLokasi').value = '';
+            muatData();
+          }
+        })
+        .catch(function (err) {
+          pesan.className = 'pesan-status gagal';
+          pesan.innerText = 'Gagal: ' + err.message;
+        });
+    }
 
     function muatData() {
       var url = WEB_APP_URL + (WEB_APP_URL.indexOf('?') === -1 ? '?' : '&') + 'format=json&_=' + Date.now();
@@ -218,8 +437,32 @@
 
     var NAMA_HARI = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
     var NAMA_BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    var NAMA_BULAN_HIJRI = ['Muharram', 'Safar', 'Rabiul Awal', 'Rabiul Akhir', 'Jumadil Awal', 'Jumadil Akhir', 'Rajab', "Sya'ban", 'Ramadhan', 'Syawal', "Dzulqa'dah", 'Dzulhijjah'];
 
     function duaDigit(n) { return (n < 10 ? '0' : '') + n; }
+
+    // Konversi Masehi ke Hijriah pakai rumus tabular (tidak bergantung
+    // pada dukungan Intl/ICU browser, jadi hasilnya konsisten di semua
+    // perangkat termasuk mobile). Estimasi ini bisa berbeda 1 hari
+    // dengan hasil rukyat resmi, tapi cukup akurat untuk tampilan umum.
+    function masehiKeHijri(date) {
+      var y = date.getFullYear(), m = date.getMonth() + 1, d = date.getDate();
+      var jd = Math.floor((1461 * (y + 4800 + Math.floor((m - 14) / 12))) / 4) +
+        Math.floor((367 * (m - 2 - 12 * Math.floor((m - 14) / 12))) / 12) -
+        Math.floor((3 * Math.floor((y + 4900 + Math.floor((m - 14) / 12)) / 100)) / 4) +
+        d - 32075;
+      var l = jd - 1948440 + 10632;
+      var n = Math.floor((l - 1) / 10631);
+      l = l - 10631 * n + 354;
+      var j = (Math.floor((10985 - l) / 5316)) * (Math.floor((50 * l) / 17719)) +
+              (Math.floor(l / 5670)) * (Math.floor((43 * l) / 15238));
+      l = l - (Math.floor((30 - j) / 15)) * (Math.floor((17719 * j) / 50)) -
+              (Math.floor(j / 16)) * (Math.floor((15238 * j) / 43)) + 29;
+      var hMonth = Math.floor((24 * l) / 709);
+      var hDay = l - Math.floor((709 * hMonth) / 24);
+      var hYear = 30 * n + j - 30;
+      return { hari: hDay, bulan: hMonth, tahun: hYear };
+    }
 
     function perbaruiJam() {
       var now = new Date();
@@ -228,12 +471,10 @@
 
       var tanggalMasehi = NAMA_HARI[now.getDay()] + ', ' + now.getDate() + ' ' + NAMA_BULAN[now.getMonth()] + ' ' + now.getFullYear();
 
-      var tanggalHijri = '';
-      try {
-        tanggalHijri = new Intl.DateTimeFormat('id-ID-u-ca-islamic', { day: 'numeric', month: 'long', year: 'numeric' }).format(now) + ' H';
-      } catch (e) {}
+      var h = masehiKeHijri(now);
+      var tanggalHijri = h.hari + ' ' + NAMA_BULAN_HIJRI[h.bulan - 1] + ' ' + h.tahun + ' H';
 
-      document.getElementById('tanggalHijriMasehi').innerText = tanggalMasehi + (tanggalHijri ? ' | ' + tanggalHijri : '');
+      document.getElementById('tanggalHijriMasehi').innerText = tanggalMasehi + ' | ' + tanggalHijri;
 
       if (targetCountdown) {
         var selisih = targetCountdown - now;
