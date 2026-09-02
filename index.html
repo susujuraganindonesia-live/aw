@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Dashboard Posting Otomatis</title>
+  <title>SUSU JURAGAN</title>
   <style>
     * { box-sizing: border-box; }
     body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; color: #2c3e50; }
@@ -49,6 +49,9 @@
       100% { transform: translateX(-100%); }
     }
     body { padding-top: 54px; }
+    .footer { text-align: center; font-size: 13px; color: #7f8c8d; margin-top: 24px; padding: 16px 0; }
+    .footer a { color: #2980b9; text-decoration: none; font-weight: 600; }
+    .footer a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -58,7 +61,7 @@
   </div>
 
   <div class="header">
-    <h1>Dashboard Posting Otomatis</h1>
+    <h1>SUSU JURAGAN</h1>
     <div class="tanggal">
       <div id="tanggalHijriMasehi"></div>
       <div class="jam" id="jamSekarang"></div>
@@ -98,6 +101,10 @@
     </div>
 
     <div class="schedule-panel" id="schedulePanel"></div>
+  </div>
+
+  <div class="footer">
+    Ishbiruu Tech &copy; 2026 - <a href="tel:081413333513">08141-3333-513</a> | <a href="https://wied.web.id" target="_blank">wied.web.id</a>
   </div>
 
   <script>
@@ -195,12 +202,17 @@
       return '<div class="card"><h2>' + nilai + '</h2><p>' + label + '</p></div>';
     }
 
+    var NAMA_HARI = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+    var NAMA_BULAN = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+
+    function duaDigit(n) { return (n < 10 ? '0' : '') + n; }
+
     function perbaruiJam() {
       var now = new Date();
-      document.getElementById('jamSekarang').innerText = now.toLocaleTimeString('id-ID');
+      document.getElementById('jamSekarang').innerText =
+        duaDigit(now.getHours()) + ':' + duaDigit(now.getMinutes()) + ':' + duaDigit(now.getSeconds());
 
-      var opsiMasehi = { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' };
-      var tanggalMasehi = now.toLocaleDateString('id-ID', opsiMasehi);
+      var tanggalMasehi = NAMA_HARI[now.getDay()] + ', ' + now.getDate() + ' ' + NAMA_BULAN[now.getMonth()] + ' ' + now.getFullYear();
 
       var tanggalHijri = '';
       try {
