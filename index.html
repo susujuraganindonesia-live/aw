@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SUSU JURAGAN</title>
+  <link rel="icon" type="image/png" href="logo-sj.png">
   <style>
     * { box-sizing: border-box; }
     body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f2f5; margin: 0; padding: 20px; color: #2c3e50; }
@@ -52,6 +53,11 @@
     .footer { text-align: center; font-size: 13px; color: #7f8c8d; margin-top: 24px; padding: 16px 0; }
     .footer a { color: #2980b9; text-decoration: none; font-weight: 600; }
     .footer a:hover { text-decoration: underline; }
+    .header-brand { display: flex; align-items: center; gap: 12px; }
+    .header-brand img { height: 44px; width: auto; }
+    .scroll-buttons { position: fixed; right: 18px; bottom: 24px; display: flex; flex-direction: column; gap: 10px; z-index: 999; }
+    .scroll-buttons button { width: 44px; height: 44px; border-radius: 50%; border: none; background: #2c3e50; color: #fff; font-size: 18px; cursor: pointer; box-shadow: 0 2px 8px rgba(0,0,0,0.25); display: flex; align-items: center; justify-content: center; opacity: 0.9; transition: opacity 0.2s, transform 0.2s; }
+    .scroll-buttons button:hover { opacity: 1; transform: scale(1.08); }
   </style>
 </head>
 <body>
@@ -61,7 +67,10 @@
   </div>
 
   <div class="header">
-    <h1>SUSU JURAGAN</h1>
+    <div class="header-brand">
+      <img src="logo-sj.png" alt="Susu Juragan">
+      <h1>SUSU JURAGAN</h1>
+    </div>
     <div class="tanggal">
       <div id="tanggalHijriMasehi"></div>
       <div class="jam" id="jamSekarang"></div>
@@ -105,6 +114,11 @@
 
   <div class="footer">
     Ishbiruu Tech &copy; 2026 - <a href="tel:081413333513">08141-3333-513</a> | <a href="https://wied.web.id" target="_blank">wied.web.id</a>
+  </div>
+
+  <div class="scroll-buttons">
+    <button onclick="window.scrollTo({top: 0, behavior: 'smooth'})" title="Scroll ke atas">▲</button>
+    <button onclick="window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'})" title="Scroll ke bawah">▼</button>
   </div>
 
   <script>
