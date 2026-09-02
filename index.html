@@ -121,15 +121,12 @@
       document.getElementById('waktuUpdate').innerText = data.waktuUpdate;
       document.getElementById('jadwalBerikutnya').innerText = data.jadwalBerikutnyaTeks;
 
-      if (data.jadwalBerikutnyaWaktu) {
-        var now = new Date();
-        var jm = data.jadwalBerikutnyaWaktu.split(':');
-        targetCountdown = new Date(now.getFullYear(), now.getMonth(), now.getDate(), parseInt(jm[0], 10), parseInt(jm[1], 10), 0);
-      } else {
-        targetCountdown = null;
-        document.getElementById('countdown').innerText = '';
-      }
-
+      if (data.jadwalBerikutnyaTimestamp) {
+  targetCountdown = new Date(data.jadwalBerikutnyaTimestamp);
+} else {
+  targetCountdown = null;
+  document.getElementById('countdown').innerText = '';
+}
       document.getElementById('cards').innerHTML =
         buatKartu('Total Naskah', data.total) +
         buatKartu('Sudah Posting', data.posted) +
